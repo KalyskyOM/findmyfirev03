@@ -1,0 +1,13 @@
+{
+  "name": "findmyfire",
+  "version": "1.0.0",
+  "description": "WPA for tracking fire locations and calculating flight paths",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve -s ."
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "serve": "^14.2.1"
+  }
+}

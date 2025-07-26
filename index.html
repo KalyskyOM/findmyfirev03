@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="description" content="FindMyFire - Fire Location Tracking and Navigation">
+    <title>FindMyFire</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    
+    <!-- Material Design Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/@material-design-icons/font@0.14.13/index.min.css" rel="stylesheet">
+
+    <!-- App CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div id="map"></div>
+        
+        <!-- Side Menu Trigger -->
+        <div class="side-menu-trigger">
+            <button id="menuTrigger" class="menu-trigger-btn">
+                <span class="material-icons">menu</span>
+            </button>
+        </div>
+
+        <!-- Settings Button -->
+        <div class="settings-trigger">
+            <button id="settingsTrigger" class="settings-trigger-btn">
+                <span class="material-icons">settings</span>
+            </button>
+        </div>
+
+        <div class="side-menu">
+            <div class="side-menu-header">
+                <h1>FindMyFire</h1>
+                <div class="dynamic-state-buttons">
+                    <button class="state-btn" data-state="fire">Set Fire Location</button>
+                    <button class="state-btn" data-state="base">Set Base Location</button>
+                </div>
+            </div>
+
+            <div class="coordinate-input card">
+                <div class="card-header">Manual Coordinates</div>
+                <!-- Quick Input -->
+                <div class="quick-input">
+                    <h2>Quick Input</h2>
+                    <div class="card">
+                        <textarea class="quick-input-textarea" id="quickInputText" placeholder="Paste coordinates here (e.g. 33°33'33"N 79°52'11"E)"></textarea>
+                        <button id="parseBtn" class="btn btn-primary">Parse Coordinates</button>
+                    </div>
+                </div>
+
+                <div class="manual-coordinates">
+                    <h2>Manual Coordinates</h2>
+                    <div class="format-selector">
+                        <button class="format-btn" data-format="DD">DD</button>
+                        <button class="format-btn" data-format="DDM">DDM</button>
+                        <button class="format-btn active" data-format="DMS">DMS</button>
+                    </div>
+
+                    <!-- Coordinate inputs will be dynamically populated -->
+                    <div id="coordinateInputs" class="dd-only"></div>
+
+                    <div class="preview-card">
+                        <div id="coordinatePreview" class="preview-text"></div>
+                    </div>
+
+                    <div class="utility-buttons">
+                        <button id="locationBtn" class="btn location-btn">
+                            <span class="material-icons">my_location</span>
+                            <span>Get Location</span>
+                        </button>
+                        <button id="validateBtn" class="btn">Validate</button>
+                        <button id="copyBtn" class="btn">Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="airport-search card">
+                <div class="card-header">Airport Search</div>
+                <div class="card-content">
+                    <div class="search-input-wrapper">
+                        <input type="text" id="airportSearchInput" class="airport-search-input" placeholder="Search by name, code, or city...">
+                        <div id="airportResults" class="airport-results"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="navigation-info card">
+                <div class="card-header">Navigation Info</div>
+                <div class="card-content">
+                    <div class="info-row">
+                        <span class="info-label">Distance:</span>
+                        <span id="distance" class="info-value">--</span>
+                        <span class="info-unit">Nm</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Track (Mag):</span>
+                        <span id="track" class="info-value">--</span>
+                        <span class="info-unit">°</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Flight Time:</span>
+                        <span id="flightTime" class="info-value">--:--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settingsPanel" class="settings-panel">
+            <div class="card">
+                <div class="card-header">
+                    <span>Settings</span>
+                    <button class="close-settings-btn">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
+                <div class="card-content">
+                    <div class="settings-section">
+                        <h3>Location Settings</h3>
+                        <div class="setting-item">
+                            <label>Location Access</label>
+                            <div id="locationStatus" class="setting-status">Checking...</div>
+                            <button id="requestLocationBtn" class="btn">Request Access</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>API Settings</h3>
+                        <div class="setting-item">
+                            <label for="autoRouterKey">AutoRouter API Key</label>
+                            <div class="api-key-input">
+                                <input type="password" id="autoRouterKey" class="settings-input" placeholder="Enter API key">
+                                <button id="saveApiKeyBtn" class="btn">Save</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>AutoRouter API</h3>
+                        <div class="settings-item">
+                            <label for="autorouter-email">Email:</label>
+                            <input type="email" id="autorouter-email" placeholder="AutoRouter account email" />
+                            <label for="autorouter-key">API Key:</label>
+                            <input type="password" id="autorouter-key" placeholder="AutoRouter API key" />
+                            <button id="save-autorouter" class="btn btn-primary">Save API Settings</button>
+                            <p class="api-status">Not connected</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>About</h3>
+                        <div class="settings-item">
+                            <p>FindMyFire v1.0</p>
+                            <p>&copy; 2025 All rights reserved</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    
+    <!-- App scripts -->
+    <script src="js/coordinates.js"></script>
+    <script src="js/airports.js"></script>
+    <script src="js/autorouter.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/sw-register.js"></script>
+</body>
+</html>

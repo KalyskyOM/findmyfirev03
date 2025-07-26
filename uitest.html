@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" style=""><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="description" content="DMS Coordinate Input - Progressive Web App for geographic coordinate input and conversion">
+    <title>DMS Coordinate Input PWA</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" id="manifest-placeholder">
+
+    <!-- Material Design Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/@material-design-icons/font@0.14.13/index.min.css" rel="stylesheet">
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      /* Remove number input spinners */
+      input[type='number']::-webkit-outer-spin-button,
+      input[type='number']::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      input[type='number'] {
+        -moz-appearance: textfield;
+      }
+
+      body {
+        font-family:
+          'Roboto',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #f5f5f5;
+        color: #333;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+      }
+
+      .app-container {
+        max-width: 480px;
+        margin: 0 auto;
+        background: #fff;
+        min-height: 100vh;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .app-header {
+        background: #2196f3;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .app-header h1 {
+        font-size: 1.5rem;
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+
+      .app-header .subtitle {
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+
+      .content {
+        padding: 20px;
+      }
+
+      .card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 16px;
+        overflow: hidden;
+      }
+
+      .card-header {
+        padding: 16px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 500;
+        color: #495057;
+      }
+
+      .card-content {
+        padding: 16px;
+      }
+
+      .format-selector {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .format-btn {
+        flex: 1;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+        text-align: center;
+      }
+
+      .format-btn.active {
+        border-color: #2196f3;
+        background: #e3f2fd;
+        color: #1976d2;
+      }
+
+      .precision-selector {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 20px;
+      }
+
+      .precision-btn {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        background: white;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+      }
+
+      .precision-btn:first-child {
+        border-radius: 4px 0 0 4px;
+      }
+
+      .precision-btn:last-child {
+        border-radius: 0 4px 4px 0;
+      }
+
+      .precision-btn.active {
+        background: #2196f3;
+        color: white;
+        border-color: #2196f3;
+      }
+
+      .coordinate-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .coord-label {
+        font-weight: 500;
+        min-width: 40px;
+        color: #555;
+      }
+
+      .input-group {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex: 1;
+      }
+
+      .coord-input {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px 8px;
+        text-align: center;
+        font-size: 1rem;
+        width: 60px;
+        transition: border-color 0.2s;
+      }
+
+      .coord-input:focus {
+        outline: none;
+        border-color: #2196f3;
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+      }
+
+      .coord-seconds {
+        width: 80px;
+      }
+
+      .coord-symbol {
+        font-weight: bold;
+        color: #666;
+        font-size: 1.1rem;
+      }
+
+      .dir-btn {
+        padding: 10px 16px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        min-width: 50px;
+        transition: all 0.2s;
+      }
+
+      .dir-btn:hover {
+        background: #f5f5f5;
+      }
+
+      /* Format visibility rules */
+      .dd-only .coord-input.minutes,
+      .dd-only .coord-input.seconds,
+      .dd-only .coord-symbol.minutes,
+      .dd-only .coord-symbol.seconds {
+        display: none !important;
+      }
+
+      .ddm-only .coord-input.seconds,
+      .ddm-only .coord-symbol.seconds {
+        display: none !important;
+      }
+
+      .preview-card {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 16px;
+        margin: 20px 0;
+        text-align: center;
+      }
+
+      .preview-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 8px;
+      }
+
+      .preview-text {
+        font-family: 'Courier New', monospace;
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #2196f3;
+        word-break: break-all;
+      }
+
+      .action-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .btn {
+        padding: 14px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        text-align: center;
+      }
+
+      .btn-primary {
+        background: #2196f3;
+        color: white;
+      }
+
+      .btn-secondary {
+        background: white;
+        color: #666;
+        border: 1px solid #ddd;
+      }
+
+      .btn-success {
+        background: #4caf50;
+        color: white;
+      }
+
+      .utility-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .btn-small {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+      }
+
+      .status-bar {
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin: 16px 0;
+        font-size: 0.9rem;
+        text-align: center;
+      }
+
+      .status-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+
+      .status-error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+
+      .status-info {
+        background: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .quick-input-textarea {
+        width: 100%;
+        min-height: 80px;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        resize: vertical;
+        font-family: 'Courier New', monospace;
+        transition: border-color 0.2s;
+      }
+
+      .quick-input-textarea:focus {
+        outline: none;
+        border-color: #2196f3;
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+      }
+
+      .parse-container {
+        display: flex;
+        gap: 12px;
+        margin-top: 12px;
+        align-items: flex-start;
+      }
+
+      .parse-btn {
+        padding: 12px 20px;
+        background: #2196f3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.2s;
+        white-space: nowrap;
+      }
+
+      .help-text {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 8px;
+        line-height: 1.4;
+      }
+
+      .airport-search-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+        margin-bottom: 12px;
+      }
+
+      .airport-search-input:focus {
+        outline: none;
+        border-color: #2196f3;
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+      }
+
+      .airport-results {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        display: none;
+      }
+
+      .airport-results.show {
+        display: block;
+      }
+
+      .airport-result-item {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .airport-result-item:hover {
+        background-color: #f5f5f5;
+      }
+
+      .airport-result-item:last-child {
+        border-bottom: none;
+      }
+
+      .airport-name {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 4px;
+      }
+
+      .airport-codes {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 2px;
+      }
+
+      .airport-location {
+        font-size: 0.85rem;
+        color: #888;
+      }
+
+      .airport-coords {
+        font-size: 0.8rem;
+        color: #2196f3;
+        font-family: 'Courier New', monospace;
+      }
+
+      .no-results {
+        padding: 16px;
+        text-align: center;
+        color: #666;
+        font-style: italic;
+      }
+
+      .location-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        justify-content: center;
+      }
+
+      .install-prompt {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        background: #333;
+        color: white;
+        padding: 16px;
+        border-radius: 8px;
+        text-align: center;
+        transform: translateY(100px);
+        transition: transform 0.3s;
+        z-index: 1000;
+      }
+
+      .install-prompt.show {
+        transform: translateY(0);
+      }
+
+      .install-prompt button {
+        background: #2196f3;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        margin: 0 8px;
+        cursor: pointer;
+      }
+
+      @media (max-width: 480px) {
+        .app-container {
+          box-shadow: none;
+        }
+
+        .content {
+          padding: 16px;
+        }
+
+        .coord-input {
+          width: 50px;
+          padding: 8px 4px;
+        }
+
+        .coord-seconds {
+          width: 70px;
+        }
+
+        .parse-container {
+          flex-direction: column;
+        }
+
+        .parse-btn {
+          width: 100%;
+        }
+
+        .location-btn span {
+          display: none;
+        }
+
+        .utility-buttons {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .utility-buttons .location-btn {
+          grid-column: span 2;
+        }
+      }
+    </style>
+  </head>
+  <body style="">
+    <div class="app-container">
+      <div class="app-header">
+        <h1>DMS Coordinate Input</h1>
+        <div class="subtitle">Geographic Coordinate Converter</div>
+      </div>
+
+      <div class="content">
+        <!-- Format Selector -->
+        <div class="card">
+          <div class="card-header">Coordinate Format</div>
+          <div class="card-content">
+            <div class="format-selector">
+              <div class="format-btn active" data-format="dd">DD</div>
+              <div class="format-btn" data-format="ddm">DDM</div>
+              <div class="format-btn" data-format="dms">DMS</div>
+            </div>
+
+            <div class="precision-selector" id="precisionSelector" style="display: none">
+              <div class="precision-btn" data-precision="0">33"</div>
+              <div class="precision-btn" data-precision="1">33.0"</div>
+              <div class="precision-btn active" data-precision="2">33.00"</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Input -->
+        <div class="card">
+          <div class="card-header">Quick Input</div>
+          <div class="card-content">
+            <textarea class="quick-input-textarea" id="quickInputText" placeholder="Paste coordinates here:
+33°33'33&quot;N 79°52'11&quot;E
+33°33.5555'N 79°52.1833'E
+33.5592778N 79.8698056E
+33.5592778, -79.8698056"></textarea>
+            <div class="parse-container">
+              <button class="parse-btn" id="parseBtn">Parse</button>
+              <div class="help-text">
+                Supports DMS (33°33'33"N, 33°33'33.1"N, 33°33'33.12"N), DDM (33°33.555'N), DD (33.5592778N), and decimal
+                formats
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Airport Search -->
+        <div class="card">
+          <div class="card-header">Airport Search</div>
+          <div class="card-content">
+            <input type="text" class="airport-search-input" id="airportSearchInput" placeholder="Search airports (ICAO/IATA code or name)">
+            <div class="airport-results" id="airportResults">
+              <div class="no-results">Start typing to search airports...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coordinate Input -->
+        <div class="card">
+          <div class="card-header">Coordinate Input</div>
+          <div class="card-content dd-only" id="coordinateInputs">
+            <!-- Latitude Row -->
+            <div class="coordinate-row">
+              <div class="coord-label">Lat:</div>
+              <div class="input-group">
+                <input type="number" class="coord-input degrees" id="latDeg" placeholder="0" step="any">
+                <span class="coord-symbol">°</span>
+                <input type="number" class="coord-input minutes" id="latMin" placeholder="0" step="any">
+                <span class="coord-symbol minutes">'</span>
+                <input type="number" class="coord-input seconds coord-seconds" id="latSec" placeholder="0" step="any">
+                <span class="coord-symbol seconds">"</span>
+                <button class="dir-btn" id="latDir" data-directions="N,S">N</button>
+              </div>
+            </div>
+
+            <!-- Longitude Row -->
+            <div class="coordinate-row">
+              <div class="coord-label">Lng:</div>
+              <div class="input-group">
+                <input type="number" class="coord-input degrees" id="lngDeg" placeholder="0" step="any">
+                <span class="coord-symbol">°</span>
+                <input type="number" class="coord-input minutes" id="lngMin" placeholder="0" step="any">
+                <span class="coord-symbol minutes">'</span>
+                <input type="number" class="coord-input seconds coord-seconds" id="lngSec" placeholder="0" step="any">
+                <span class="coord-symbol seconds">"</span>
+                <button class="dir-btn" id="lngDir" data-directions="E,W">E</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Utility Buttons -->
+        <div class="utility-buttons">
+          <button class="btn btn-secondary btn-small" id="clearBtn">Clear</button>
+          <button class="btn btn-secondary btn-small location-btn" id="gpsBtn">
+            <span class="material-icons-outlined" style="font-size: 16px">my_location</span>
+            <span>My Location</span>
+          </button>
+          <button class="btn btn-secondary btn-small" id="validateBtn">Validate</button>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-card">
+          <div class="preview-label">Preview:</div>
+          <div class="preview-text" id="coordinatePreview">0.000000°N 0.000000°E</div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessage" class="hidden"></div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button class="btn btn-primary" id="saveBtn">Save</button>
+          <button class="btn btn-success" id="copyBtn">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Install Prompt -->
+    <div class="install-prompt" id="installPrompt">
+      <div>Install this app for offline use</div>
+      <button id="installBtn">Install</button>
+      <button id="dismissBtn">Dismiss</button>
+    </div>
+
+    <script>
+      // PWA Manifest
+      const manifestData = {
+        name: 'DMS Coordinate Input',
+        short_name: 'DMS Coord',
+        description: 'Progressive Web App for geographic coordinate input and conversion',
+        start_url: '/',
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#2196F3',
+        icons: [
+          {
+            src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IGZpbGw9IiMyMTk2RjMiIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4Ii8+Cjx0ZXh0IHg9IjY0IiB5PSI3MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RE1TPC90ZXh0Pgo8L3N2Zz4=',
+            sizes: '128x128',
+            type: 'image/svg+xml',
+          },
+        ],
+      };
+
+      const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+      const manifestURL = URL.createObjectURL(manifestBlob);
+      document.getElementById('manifest-placeholder').href = manifestURL;
+
+      // Service Worker
+      const swCode = `
+        self.addEventListener('install', event => {
+          self.skipWaiting();
+        });
+        self.addEventListener('activate', event => {
+          event.waitUntil(self.clients.claim());
+        });
+        self.addEventListener('fetch', event => {
+          event.respondWith(
+            fetch(event.request).catch(() => new Response('Offline'))
+          );
+        });
+      `;
+
+      if ('serviceWorker' in navigator) {
+        const swBlob = new Blob([swCode], { type: 'text/javascript' });
+        const swURL = URL.createObjectURL(swBlob);
+        navigator.serviceWorker
+          .register(swURL)
+          .then(() => console.log('Service Worker registered'))
+          .catch((err) => console.log('Service Worker registration failed'));
+      }
+
+      // Airport Database
+      const airportDatabase = [
+        {
+          icao: 'KJFK',
+          iata: 'JFK',
+          name: 'John F. Kennedy International Airport',
+          city: 'New York',
+          country: 'USA',
+          lat: 40.6413,
+          lng: -73.7781,
+        },
+        {
+          icao: 'KLAX',
+          iata: 'LAX',
+          name: 'Los Angeles International Airport',
+          city: 'Los Angeles',
+          country: 'USA',
+          lat: 33.9425,
+          lng: -118.4081,
+        },
+        {
+          icao: 'EGLL',
+          iata: 'LHR',
+          name: 'Heathrow Airport',
+          city: 'London',
+          country: 'UK',
+          lat: 51.47,
+          lng: -0.4543,
+        },
+        {
+          icao: 'LFPG',
+          iata: 'CDG',
+          name: 'Charles de Gaulle Airport',
+          city: 'Paris',
+          country: 'France',
+          lat: 49.0097,
+          lng: 2.5479,
+        },
+        {
+          icao: 'EDDF',
+          iata: 'FRA',
+          name: 'Frankfurt Airport',
+          city: 'Frankfurt',
+          country: 'Germany',
+          lat: 50.0379,
+          lng: 8.5622,
+        },
+        {
+          icao: 'RJTT',
+          iata: 'NRT',
+          name: 'Narita International Airport',
+          city: 'Tokyo',
+          country: 'Japan',
+          lat: 35.7647,
+          lng: 140.3864,
+        },
+        {
+          icao: 'OMDB',
+          iata: 'DXB',
+          name: 'Dubai International Airport',
+          city: 'Dubai',
+          country: 'UAE',
+          lat: 25.2532,
+          lng: 55.3657,
+        },
+        {
+          icao: 'VHHH',
+          iata: 'HKG',
+          name: 'Hong Kong International Airport',
+          city: 'Hong Kong',
+          country: 'Hong Kong',
+          lat: 22.308,
+          lng: 113.9185,
+        },
+        {
+          icao: 'YSSY',
+          iata: 'SYD',
+          name: 'Sydney Kingsford Smith Airport',
+          city: 'Sydney',
+          country: 'Australia',
+          lat: -33.9399,
+          lng: 151.1753,
+        },
+        {
+          icao: 'SBGR',
+          iata: 'GRU',
+          name: 'São Paulo–Guarulhos International Airport',
+          city: 'São Paulo',
+          country: 'Brazil',
+          lat: -23.4356,
+          lng: -46.4731,
+        },
+        {
+          icao: 'CYYZ',
+          iata: 'YYZ',
+          name: 'Toronto Pearson International Airport',
+          city: 'Toronto',
+          country: 'Canada',
+          lat: 43.6777,
+          lng: -79.6248,
+        },
+        {
+          icao: 'KORD',
+          iata: 'ORD',
+          name: "O'Hare International Airport",
+          city: 'Chicago',
+          country: 'USA',
+          lat: 41.9742,
+          lng: -87.9073,
+        },
+        {
+          icao: 'KDEN',
+          iata: 'DEN',
+          name: 'Denver International Airport',
+          city: 'Denver',
+          country: 'USA',
+          lat: 39.8561,
+          lng: -104.6737,
+        },
+        {
+          icao: 'KSEA',
+          iata: 'SEA',
+          name: 'Seattle-Tacoma International Airport',
+          city: 'Seattle',
+          country: 'USA',
+          lat: 47.4502,
+          lng: -122.3088,
+        },
+        {
+          icao: 'KBOS',
+          iata: 'BOS',
+          name: 'Logan International Airport',
+          city: 'Boston',
+          country: 'USA',
+          lat: 42.3656,
+          lng: -71.0096,
+        },
+        {
+          icao: 'KIAD',
+          iata: 'IAD',
+          name: 'Washington Dulles International Airport',
+          city: 'Washington DC',
+          country: 'USA',
+          lat: 38.9445,
+          lng: -77.4558,
+        },
+        {
+          icao: 'KLAS',
+          iata: 'LAS',
+          name: 'McCarran International Airport',
+          city: 'Las Vegas',
+          country: 'USA',
+          lat: 36.084,
+          lng: -115.1537,
+        },
+        {
+          icao: 'KATL',
+          iata: 'ATL',
+          name: 'Hartsfield-Jackson Atlanta International Airport',
+          city: 'Atlanta',
+          country: 'USA',
+          lat: 33.6407,
+          lng: -84.4277,
+        },
+        {
+          icao: 'KMIA',
+          iata: 'MIA',
+          name: 'Miami International Airport',
+          city: 'Miami',
+          country: 'USA',
+          lat: 25.7959,
+          lng: -80.287,
+        },
+        {
+          icao: 'EGKK',
+          iata: 'LGW',
+          name: 'Gatwick Airport',
+          city: 'London',
+          country: 'UK',
+          lat: 51.1537,
+          lng: -0.1821,
+        },
+        {
+          icao: 'EHAM',
+          iata: 'AMS',
+          name: 'Amsterdam Airport Schiphol',
+          city: 'Amsterdam',
+          country: 'Netherlands',
+          lat: 52.3086,
+          lng: 4.7639,
+        },
+        {
+          icao: 'LIRF',
+          iata: 'FCO',
+          name: 'Leonardo da Vinci International Airport',
+          city: 'Rome',
+          country: 'Italy',
+          lat: 41.8003,
+          lng: 12.2389,
+        },
+        {
+          icao: 'LEMD',
+          iata: 'MAD',
+          name: 'Madrid-Barajas Airport',
+          city: 'Madrid',
+          country: 'Spain',
+          lat: 40.4836,
+          lng: -3.568,
+        },
+        {
+          icao: 'LOWW',
+          iata: 'VIE',
+          name: 'Vienna International Airport',
+          city: 'Vienna',
+          country: 'Austria',
+          lat: 48.1103,
+          lng: 16.5697,
+        },
+      ];
+
+      // App State
+      let currentFormat = 'dd';
+      let currentPrecision = 2;
+      let coordinates = {
+        lat: { deg: 0, min: 0, sec: 0, dir: 'N' },
+        lng: { deg: 0, min: 0, sec: 0, dir: 'E' },
+      };
+
+      // DOM Elements
+      const formatBtns = document.querySelectorAll('.format-btn');
+      const precisionBtns = document.querySelectorAll('.precision-btn');
+      const precisionSelector = document.getElementById('precisionSelector');
+      const coordinateInputs = document.getElementById('coordinateInputs');
+      const coordinatePreview = document.getElementById('coordinatePreview');
+      const statusMessage = document.getElementById('statusMessage');
+
+      const latDeg = document.getElementById('latDeg');
+      const latMin = document.getElementById('latMin');
+      const latSec = document.getElementById('latSec');
+      const latDir = document.getElementById('latDir');
+      const lngDeg = document.getElementById('lngDeg');
+      const lngMin = document.getElementById('lngMin');
+      const lngSec = document.getElementById('lngSec');
+      const lngDir = document.getElementById('lngDir');
+
+      // PWA Install
+      let deferredPrompt;
+      const installPrompt = document.getElementById('installPrompt');
+      const installBtn = document.getElementById('installBtn');
+      const dismissBtn = document.getElementById('dismissBtn');
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installPrompt.classList.add('show');
+      });
+
+      installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          installPrompt.classList.remove('show');
+        }
+      });
+
+      dismissBtn.addEventListener('click', () => {
+        installPrompt.classList.remove('show');
+      });
+
+      // Coordinate Conversion Functions
+      function decimalToDMS(decimal, isLatitude) {
+        const abs = Math.abs(decimal);
+        const degrees = Math.floor(abs);
+        const minutesFloat = (abs - degrees) * 60;
+        const minutes = Math.floor(minutesFloat);
+        const seconds = (minutesFloat - minutes) * 60;
+
+        const direction = isLatitude ? (decimal >= 0 ? 'N' : 'S') : decimal >= 0 ? 'E' : 'W';
+
+        return { deg: degrees, min: minutes, sec: seconds, dir: direction };
+      }
+
+      function dmsToDecimal(deg, min, sec, dir) {
+        const decimal = parseFloat(deg) + parseFloat(min) / 60 + parseFloat(sec) / 3600;
+        return dir === 'S' || dir === 'W' ? -decimal : decimal;
+      }
+
+      // Coordinate Parsing Functions
+      function parseCoordinateString(input) {
+        const cleanInput = input.trim().replace(/\s+/g, ' ');
+
+        const patterns = [
+          // DMS Pattern: 33°33'33"N, 33°33'33.1"N, 33°33'33.12"N etc.
+          {
+            regex:
+              /(-?\d{1,3})°(\d{1,2})'(\d{1,2}(?:\.\d{1,2})?)"([NSEW])\s+(-?\d{1,3})°(\d{1,2})'(\d{1,2}(?:\.\d{1,2})?)"([NSEW])/i,
+            format: 'dms',
+            parser: (matches) => ({
+              lat: {
+                deg: parseInt(matches[1]),
+                min: parseInt(matches[2]),
+                sec: parseFloat(matches[3]),
+                dir: matches[4].toUpperCase(),
+              },
+              lng: {
+                deg: parseInt(matches[5]),
+                min: parseInt(matches[6]),
+                sec: parseFloat(matches[7]),
+                dir: matches[8].toUpperCase(),
+              },
+            }),
+          },
+          // DDM Pattern: 33°33.5555'N 79°52.1833'E
+          {
+            regex: /(-?\d{1,3})°(\d{1,2}(?:\.\d+)?)'([NSEW])\s+(-?\d{1,3})°(\d{1,2}(?:\.\d+)?)'([NSEW])/i,
+            format: 'ddm',
+            parser: (matches) => {
+              const latMinTotal = parseFloat(matches[2]);
+              const lngMinTotal = parseFloat(matches[5]);
+              return {
+                lat: {
+                  deg: parseInt(matches[1]),
+                  min: Math.floor(latMinTotal),
+                  sec: (latMinTotal % 1) * 60,
+                  dir: matches[3].toUpperCase(),
+                },
+                lng: {
+                  deg: parseInt(matches[4]),
+                  min: Math.floor(lngMinTotal),
+                  sec: (lngMinTotal % 1) * 60,
+                  dir: matches[6].toUpperCase(),
+                },
+              };
+            },
+          },
+          // DD Pattern with directions: 33.5592778N 79.8698056E
+          {
+            regex: /(-?\d{1,3}(?:\.\d+)?)([NSEW])\s+(-?\d{1,3}(?:\.\d+)?)([NSEW])/i,
+            format: 'dd',
+            parser: (matches) => {
+              const lat = parseFloat(matches[1]) * (matches[2].toUpperCase() === 'S' ? -1 : 1);
+              const lng = parseFloat(matches[3]) * (matches[4].toUpperCase() === 'W' ? -1 : 1);
+              return {
+                lat: decimalToDMS(lat, true),
+                lng: decimalToDMS(lng, false),
+              };
+            },
+          },
+          // DD Pattern with comma: 33.5592778, -79.8698056
+          {
+            regex: /(-?\d{1,3}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)/,
+            format: 'dd',
+            parser: (matches) => {
+              const lat = parseFloat(matches[1]);
+              const lng = parseFloat(matches[2]);
+              return {
+                lat: decimalToDMS(lat, true),
+                lng: decimalToDMS(lng, false),
+              };
+            },
+          },
+          // Single coordinate pair without separators: 33.5592778 -79.8698056
+          {
+            regex: /(-?\d{1,3}(?:\.\d+)?)\s+(-?\d{1,3}(?:\.\d+)?)/,
+            format: 'dd',
+            parser: (matches) => {
+              const lat = parseFloat(matches[1]);
+              const lng = parseFloat(matches[2]);
+              return {
+                lat: decimalToDMS(lat, true),
+                lng: decimalToDMS(lng, false),
+              };
+            },
+          },
+        ];
+
+        for (const pattern of patterns) {
+          const matches = cleanInput.match(pattern.regex);
+          if (matches) {
+            try {
+              const result = pattern.parser(matches);
+
+              const latDecimal = dmsToDecimal(result.lat.deg, result.lat.min, result.lat.sec, result.lat.dir);
+              const lngDecimal = dmsToDecimal(result.lng.deg, result.lng.min, result.lng.sec, result.lng.dir);
+
+              if (latDecimal >= -90 && latDecimal <= 90 && lngDecimal >= -180 && lngDecimal <= 180) {
+                return { success: true, coordinates: result, detectedFormat: pattern.format };
+              }
+            } catch (error) {
+              continue;
+            }
+          }
+        }
+
+        return { success: false, error: 'Could not parse coordinate string. Please check the format.' };
+      }
+
+      function populateFieldsFromParsed(parsedResult) {
+        coordinates.lat = parsedResult.coordinates.lat;
+        coordinates.lng = parsedResult.coordinates.lng;
+
+        if (parsedResult.detectedFormat !== currentFormat) {
+          currentFormat = parsedResult.detectedFormat;
+          formatBtns.forEach((btn) => {
+            btn.classList.toggle('active', btn.dataset.format === currentFormat);
+          });
+          coordinateInputs.className = `card-content ${currentFormat}-only`;
+          precisionSelector.style.display = currentFormat === 'dms' ? 'flex' : 'none';
+        }
+
+        updateInputs();
+        updatePreview();
+      }
+
+      function formatCoordinate(coord, precision, format) {
+        switch (format) {
+          case 'dd':
+            const decimal = dmsToDecimal(coord.deg, coord.min, coord.sec, coord.dir);
+            return `${Math.abs(decimal).toFixed(6)}°${coord.dir}`;
+          case 'ddm':
+            const minDecimal = parseFloat(coord.min) + parseFloat(coord.sec) / 60;
+            return `${coord.deg}°${minDecimal.toFixed(4)}'${coord.dir}`;
+          case 'dms':
+            return `${coord.deg}°${coord.min}'${parseFloat(coord.sec).toFixed(precision)}"${coord.dir}`;
+          default:
+            return '';
+        }
+      }
+
+      function updatePreview() {
+        const latFormatted = formatCoordinate(coordinates.lat, currentPrecision, currentFormat);
+        const lngFormatted = formatCoordinate(coordinates.lng, currentPrecision, currentFormat);
+        coordinatePreview.textContent = `${latFormatted} ${lngFormatted}`;
+      }
+
+      function updateInputs() {
+        if (currentFormat === 'dd') {
+          const latDecimal = dmsToDecimal(
+            coordinates.lat.deg,
+            coordinates.lat.min,
+            coordinates.lat.sec,
+            coordinates.lat.dir,
+          );
+          const lngDecimal = dmsToDecimal(
+            coordinates.lng.deg,
+            coordinates.lng.min,
+            coordinates.lng.sec,
+            coordinates.lng.dir,
+          );
+
+          latDeg.value = Math.abs(latDecimal).toFixed(6);
+          lngDeg.value = Math.abs(lngDecimal).toFixed(6);
+          latDir.textContent = latDecimal >= 0 ? 'N' : 'S';
+          lngDir.textContent = lngDecimal >= 0 ? 'E' : 'W';
+        } else {
+          latDeg.value = coordinates.lat.deg;
+          latMin.value = coordinates.lat.min;
+          latSec.value = coordinates.lat.sec.toFixed(currentPrecision);
+          latDir.textContent = coordinates.lat.dir;
+
+          lngDeg.value = coordinates.lng.deg;
+          lngMin.value = coordinates.lng.min;
+          lngSec.value = coordinates.lng.sec.toFixed(currentPrecision);
+          lngDir.textContent = coordinates.lng.dir;
+        }
+      }
+
+      function readInputs() {
+        if (currentFormat === 'dd') {
+          const latDecimal = parseFloat(latDeg.value) * (latDir.textContent === 'S' ? -1 : 1);
+          const lngDecimal = parseFloat(lngDeg.value) * (lngDir.textContent === 'W' ? -1 : 1);
+
+          coordinates.lat = decimalToDMS(latDecimal, true);
+          coordinates.lng = decimalToDMS(lngDecimal, false);
+        } else {
+          coordinates.lat = {
+            deg: parseInt(latDeg.value) || 0,
+            min: parseInt(latMin.value) || 0,
+            sec: parseFloat(latSec.value) || 0,
+            dir: latDir.textContent,
+          };
+          coordinates.lng = {
+            deg: parseInt(lngDeg.value) || 0,
+            min: parseInt(lngMin.value) || 0,
+            sec: parseFloat(lngSec.value) || 0,
+            dir: lngDir.textContent,
+          };
+        }
+      }
+
+      function validateCoordinates() {
+        const latDecimal = dmsToDecimal(
+          coordinates.lat.deg,
+          coordinates.lat.min,
+          coordinates.lat.sec,
+          coordinates.lat.dir,
+        );
+        const lngDecimal = dmsToDecimal(
+          coordinates.lng.deg,
+          coordinates.lng.min,
+          coordinates.lng.sec,
+          coordinates.lng.dir,
+        );
+
+        if (latDecimal < -90 || latDecimal > 90) {
+          return { valid: false, message: 'Latitude must be between -90° and 90°' };
+        }
+        if (lngDecimal < -180 || lngDecimal > 180) {
+          return { valid: false, message: 'Longitude must be between -180° and 180°' };
+        }
+        if (coordinates.lat.min >= 60 || coordinates.lng.min >= 60) {
+          return { valid: false, message: 'Minutes must be less than 60' };
+        }
+        if (coordinates.lat.sec >= 60 || coordinates.lng.sec >= 60) {
+          return { valid: false, message: 'Seconds must be less than 60' };
+        }
+
+        return { valid: true, message: 'Coordinates are valid' };
+      }
+
+      function showStatus(message, type = 'info') {
+        statusMessage.className = `status-bar status-${type}`;
+        statusMessage.textContent = message;
+        statusMessage.classList.remove('hidden');
+
+        setTimeout(() => {
+          statusMessage.classList.add('hidden');
+        }, 3000);
+      }
+
+      // Airport Search Functions
+      function searchAirports(query) {
+        if (!query || query.length < 2) return [];
+
+        const lowerQuery = query.toLowerCase();
+        return airportDatabase
+          .filter(
+            (airport) =>
+              airport.icao.toLowerCase().includes(lowerQuery) ||
+              airport.iata.toLowerCase().includes(lowerQuery) ||
+              airport.name.toLowerCase().includes(lowerQuery) ||
+              airport.city.toLowerCase().includes(lowerQuery),
+          )
+          .slice(0, 10);
+      }
+
+      function displayAirportResults(results) {
+        const resultsContainer = document.getElementById('airportResults');
+
+        if (results.length === 0) {
+          resultsContainer.innerHTML = '<div class="no-results">No airports found. Try a different search term.</div>';
+          resultsContainer.classList.add('show');
+          return;
+        }
+
+        const resultHTML = results
+          .map(
+            (airport) => `
+          <div class="airport-result-item" onclick="selectAirport(${airport.lat}, ${airport.lng}, '${airport.name.replace(/'/g, "\\'")}')">
+            <div class="airport-name">${airport.name}</div>
+            <div class="airport-codes">${airport.icao} / ${airport.iata}</div>
+            <div class="airport-location">${airport.city}, ${airport.country}</div>
+            <div class="airport-coords">${airport.lat.toFixed(4)}°, ${airport.lng.toFixed(4)}°</div>
+          </div>
+        `,
+          )
+          .join('');
+
+        resultsContainer.innerHTML = resultHTML;
+        resultsContainer.classList.add('show');
+      }
+
+      function selectAirport(lat, lng, name) {
+        coordinates.lat = decimalToDMS(lat, true);
+        coordinates.lng = decimalToDMS(lng, false);
+
+        updateInputs();
+        updatePreview();
+
+        document.getElementById('airportResults').classList.remove('show');
+        document.getElementById('airportSearchInput').value = '';
+
+        showStatus(`Coordinates set to ${name}`, 'success');
+      }
+
+      // Event Listeners
+      formatBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          formatBtns.forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          readInputs();
+          currentFormat = btn.dataset.format;
+
+          coordinateInputs.className = `card-content ${currentFormat}-only`;
+          precisionSelector.style.display = currentFormat === 'dms' ? 'flex' : 'none';
+
+          updateInputs();
+          updatePreview();
+
+          localStorage.setItem('dms-format', currentFormat);
+        });
+      });
+
+      precisionBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          precisionBtns.forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          currentPrecision = parseInt(btn.dataset.precision);
+          updateInputs();
+          updatePreview();
+
+          localStorage.setItem('dms-precision', currentPrecision);
+        });
+      });
+
+      // Direction button toggles
+      latDir.addEventListener('click', () => {
+        const dirs = latDir.dataset.directions.split(',');
+        const currentIndex = dirs.indexOf(latDir.textContent);
+        latDir.textContent = dirs[(currentIndex + 1) % dirs.length];
+        readInputs();
+        updatePreview();
+      });
+
+      lngDir.addEventListener('click', () => {
+        const dirs = lngDir.dataset.directions.split(',');
+        const currentIndex = dirs.indexOf(lngDir.textContent);
+        lngDir.textContent = dirs[(currentIndex + 1) % dirs.length];
+        readInputs();
+        updatePreview();
+      });
+
+      // Input change listeners
+      const inputs = [latDeg, latMin, latSec, lngDeg, lngMin, lngSec];
+      inputs.forEach((input) => {
+        input.addEventListener('input', () => {
+          readInputs();
+          updatePreview();
+        });
+      });
+
+      // Quick Input parsing
+      const quickInputText = document.getElementById('quickInputText');
+      const parseBtn = document.getElementById('parseBtn');
+
+      parseBtn.addEventListener('click', () => {
+        const inputText = quickInputText.value.trim();
+        if (!inputText) {
+          showStatus('Please enter coordinates to parse', 'error');
+          return;
+        }
+
+        const parseResult = parseCoordinateString(inputText);
+        if (parseResult.success) {
+          populateFieldsFromParsed(parseResult);
+          showStatus(
+            `Coordinates parsed successfully as ${parseResult.detectedFormat.toUpperCase()} format`,
+            'success',
+          );
+          quickInputText.value = '';
+        } else {
+          showStatus(parseResult.error, 'error');
+        }
+      });
+
+      quickInputText.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          parseBtn.click();
+        }
+      });
+
+      // Airport Search
+      const airportSearchInput = document.getElementById('airportSearchInput');
+      const airportResults = document.getElementById('airportResults');
+
+      airportSearchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+
+        if (query.length < 2) {
+          airportResults.classList.remove('show');
+          return;
+        }
+
+        const results = searchAirports(query);
+        displayAirportResults(results);
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.card')) {
+          airportResults.classList.remove('show');
+        }
+      });
+
+      // Utility buttons
+      document.getElementById('clearBtn').addEventListener('click', () => {
+        coordinates = {
+          lat: { deg: 0, min: 0, sec: 0, dir: 'N' },
+          lng: { deg: 0, min: 0, sec: 0, dir: 'E' },
+        };
+        updateInputs();
+        updatePreview();
+        showStatus('Coordinates cleared', 'info');
+      });
+
+      document.getElementById('gpsBtn').addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          showStatus('Geolocation not supported by this browser', 'error');
+          return;
+        }
+
+        showStatus('Getting your location...', 'info');
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            coordinates.lat = decimalToDMS(position.coords.latitude, true);
+            coordinates.lng = decimalToDMS(position.coords.longitude, false);
+            updateInputs();
+            updatePreview();
+            showStatus(`Location updated (accuracy: ${Math.round(position.coords.accuracy)}m)`, 'success');
+          },
+          (error) => {
+            let errorMsg = 'Location error: ';
+            switch (error.code) {
+              case error.PERMISSION_DENIED:
+                errorMsg += 'Location access denied by user';
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMsg += 'Location information unavailable';
+                break;
+              case error.TIMEOUT:
+                errorMsg += 'Location request timed out';
+                break;
+              default:
+                errorMsg += 'Unknown error occurred';
+                break;
+            }
+            showStatus(errorMsg, 'error');
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 300000,
+          },
+        );
+      });
+
+      document.getElementById('validateBtn').addEventListener('click', () => {
+        readInputs();
+        const validation = validateCoordinates();
+        showStatus(validation.message, validation.valid ? 'success' : 'error');
+      });
+
+      document.getElementById('saveBtn').addEventListener('click', () => {
+        readInputs();
+        const validation = validateCoordinates();
+
+        if (validation.valid) {
+          const data = {
+            coordinates,
+            format: currentFormat,
+            precision: currentPrecision,
+            preview: coordinatePreview.textContent,
+            timestamp: new Date().toISOString(),
+          };
+
+          localStorage.setItem('dms-saved-coordinates', JSON.stringify(data));
+          showStatus('Coordinates saved', 'success');
+        } else {
+          showStatus(validation.message, 'error');
+        }
+      });
+
+      document.getElementById('copyBtn').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(coordinatePreview.textContent);
+          showStatus('Coordinates copied to clipboard', 'success');
+        } catch (err) {
+          const textArea = document.createElement('textarea');
+          textArea.value = coordinatePreview.textContent;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          showStatus('Coordinates copied to clipboard', 'success');
+        }
+      });
+
+      // Initialize app
+      function initializeApp() {
+        const savedFormat = localStorage.getItem('dms-format');
+        const savedPrecision = localStorage.getItem('dms-precision');
+        const savedCoordinates = localStorage.getItem('dms-saved-coordinates');
+
+        if (savedFormat && ['dd', 'ddm', 'dms'].includes(savedFormat)) {
+          currentFormat = savedFormat;
+          formatBtns.forEach((btn) => {
+            btn.classList.toggle('active', btn.dataset.format === currentFormat);
+          });
+        }
+
+        if (savedPrecision) {
+          currentPrecision = parseInt(savedPrecision);
+          precisionBtns.forEach((btn) => {
+            btn.classList.toggle('active', parseInt(btn.dataset.precision) === currentPrecision);
+          });
+        }
+
+        if (savedCoordinates) {
+          try {
+            const data = JSON.parse(savedCoordinates);
+            coordinates = data.coordinates;
+          } catch (e) {
+            console.error('Error loading saved coordinates:', e);
+          }
+        }
+
+        coordinateInputs.className = `card-content ${currentFormat}-only`;
+        precisionSelector.style.display = currentFormat === 'dms' ? 'flex' : 'none';
+
+        updateInputs();
+        updatePreview();
+      }
+
+      // Start the app
+      initializeApp();
+    </script>
+
+
+</body></html>
