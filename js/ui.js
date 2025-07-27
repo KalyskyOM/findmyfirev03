@@ -47,13 +47,13 @@ class UIHandler {
             const parseResult = this.coordinates.parseCoordinateString(inputText);
             if (parseResult.success) {
                 // Update format to match parsed format
-                this.currentFormat = parseResult.detectedFormat.toUpperCase();
-                localStorage.setItem('fmf-format', this.currentFormat);
+                this.coordinates.currentFormat = parseResult.detectedFormat.toLowerCase();
+                localStorage.setItem('fmf-format', this.coordinates.currentFormat);
 
                 // Update UI
                 const formatBtns = document.querySelectorAll('.format-btn');
                 formatBtns.forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.format === this.currentFormat);
+                    btn.classList.toggle('active', btn.dataset.format.toLowerCase() === this.coordinates.currentFormat);
                 });
 
                 // Set coordinate values
@@ -61,7 +61,7 @@ class UIHandler {
                 this.coordinates.lng = parseResult.data.lng;
 
                 // Rebuild inputs and update display
-                this.rebuildInputs();
+                this.createCoordinateInputs();
                 this.updatePreview();
                 this.showSuccess(`Coordinates parsed successfully as ${parseResult.detectedFormat.toUpperCase()} format`);
                 quickInputText.value = '';
@@ -462,34 +462,53 @@ class UIHandler {
         locationBtn.style.display = state === 'base' ? 'flex' : 'none';
     }
 
-    getCurrentLocation() {
-        if ('geolocation' in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const state = window.mapHandler.getState();
-                    const latitude = position.coords.latitude;
-                    const longitude = position.coords.longitude;
+    async getCurrentLocation() {
+        if (!('geolocation' in navigator)) {
+            this.showError('Geolocation is not supported by your browser');
+            return;
+        }
 
-                    // Update map
-                    if (state === 'fire') {
-                        window.mapHandler.setFireLocation(latitude, longitude);
-                    } else if (state === 'base') {
-                        window.mapHandler.setBaseLocation(latitude, longitude);
+        const state = window.mapHandler.getState();
+        if (state !== 'base') {
+            this.showError('Geolocation is only available for setting base location');
+            return;
+        }
+
+        try {
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(
+                    resolve,
+                    (error) => {
+                        switch (error.code) {
+                            case error.PERMISSION_DENIED:
+                                reject(new Error('Location permission denied'));
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                reject(new Error('Location information unavailable'));
+                                break;
+                            case error.TIMEOUT:
+                                reject(new Error('Location request timed out'));
+                                break;
+                            default:
+                                reject(new Error('An unknown error occurred'));
+                        }
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
                     }
+                );
+            });
 
-                    // Save location
-                    this.coordinates.saveLocation(state, { lat: latitude, lng: longitude });
-
-                    // Update UI
-                    this.handleLocationUpdate({ type: state, lat: latitude, lng: longitude });
-                },
-                (error) => {
-                    console.error('Geolocation error:', error);
-                    alert('Could not get your location. Please check your permissions.');
-                }
-            );
-        } else {
-            alert('Geolocation is not supported by your browser');
+            const { latitude, longitude } = position.coords;
+            window.mapHandler.setBaseLocation(latitude, longitude);
+            this.coordinates.saveLocation('base', { lat: latitude, lng: longitude });
+            this.handleLocationUpdate({ type: 'base', lat: latitude, lng: longitude });
+            this.showSuccess('Base location set from your current position');
+        } catch (error) {
+            this.showError(error.message || 'Failed to get your location');
+            console.error('Geolocation error:', error);
         }
     }
 
@@ -666,6 +685,22 @@ class UIHandler {
         }
 
         resultsContainer.classList.add('show');
+    }
+
+    showError(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-error';
+        alert.textContent = message;
+        document.body.appendChild(alert);
+        setTimeout(() => alert.remove(), 3000);
+    }
+
+    showSuccess(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success';
+        alert.textContent = message;
+        document.body.appendChild(alert);
+        setTimeout(() => alert.remove(), 3000);
     }
 }
 

@@ -193,6 +193,27 @@ class Coordinates {
         }
     }
 
+    validateCoordinates(coords) {
+        // Convert to decimal for range validation
+        const latDecimal = this.DMSToDecimal(coords.lat, true);
+        const lngDecimal = this.DMSToDecimal(coords.lng, false);
+
+        if (latDecimal < -90 || latDecimal > 90) {
+            return { valid: false, message: 'Latitude must be between -90° and 90°' };
+        }
+        if (lngDecimal < -180 || lngDecimal > 180) {
+            return { valid: false, message: 'Longitude must be between -180° and 180°' };
+        }
+        if (coords.lat.minutes >= 60 || coords.lng.minutes >= 60) {
+            return { valid: false, message: 'Minutes must be less than 60' };
+        }
+        if (coords.lat.seconds >= 60 || coords.lng.seconds >= 60) {
+            return { valid: false, message: 'Seconds must be less than 60' };
+        }
+
+        return { valid: true, message: 'Coordinates are valid' };
+    }
+
     parseCoordinateString(input) {
         if (!input) {
             return { success: false, error: 'No input provided' };
@@ -205,23 +226,30 @@ class Coordinates {
         if (dmsMatch) {
             try {
                 const [_, latDeg, latMin, latSec, latDir, lngDeg, lngMin, lngSec, lngDir] = dmsMatch;
+                const coords = {
+                    lat: {
+                        degrees: parseInt(latDeg),
+                        minutes: parseInt(latMin),
+                        seconds: parseFloat(latSec || '0'),
+                        direction: latDir.toUpperCase()
+                    },
+                    lng: {
+                        degrees: parseInt(lngDeg),
+                        minutes: parseInt(lngMin),
+                        seconds: parseFloat(lngSec || '0'),
+                        direction: lngDir.toUpperCase()
+                    }
+                };
+
+                const validation = this.validateCoordinates(coords);
+                if (!validation.valid) {
+                    return { success: false, error: validation.message };
+                }
+
                 return {
                     success: true,
                     detectedFormat: 'dms',
-                    data: {
-                        lat: {
-                            degrees: parseInt(latDeg),
-                            minutes: parseInt(latMin),
-                            seconds: parseFloat(latSec || '0'),
-                            direction: latDir.toUpperCase()
-                        },
-                        lng: {
-                            degrees: parseInt(lngDeg),
-                            minutes: parseInt(lngMin),
-                            seconds: parseFloat(lngSec || '0'),
-                            direction: lngDir.toUpperCase()
-                        }
-                    }
+                    data: coords
                 };
             } catch (error) {
                 return { success: false, error: 'Invalid DMS format' };
@@ -235,23 +263,30 @@ class Coordinates {
         if (ddmMatch) {
             try {
                 const [_, latDeg, latMin, latDir, lngDeg, lngMin, lngDir] = ddmMatch;
+                const coords = {
+                    lat: {
+                        degrees: parseInt(latDeg),
+                        minutes: parseFloat(latMin),
+                        seconds: 0,
+                        direction: latDir.toUpperCase()
+                    },
+                    lng: {
+                        degrees: parseInt(lngDeg),
+                        minutes: parseFloat(lngMin),
+                        seconds: 0,
+                        direction: lngDir.toUpperCase()
+                    }
+                };
+
+                const validation = this.validateCoordinates(coords);
+                if (!validation.valid) {
+                    return { success: false, error: validation.message };
+                }
+
                 return {
                     success: true,
                     detectedFormat: 'ddm',
-                    data: {
-                        lat: {
-                            degrees: parseInt(latDeg),
-                            minutes: parseFloat(latMin),
-                            seconds: 0,
-                            direction: latDir.toUpperCase()
-                        },
-                        lng: {
-                            degrees: parseInt(lngDeg),
-                            minutes: parseFloat(lngMin),
-                            seconds: 0,
-                            direction: lngDir.toUpperCase()
-                        }
-                    }
+                    data: coords
                 };
             } catch (error) {
                 return { success: false, error: 'Invalid DDM format' };
@@ -269,13 +304,20 @@ class Coordinates {
                 const lngNum = parseFloat(lng);
                 const latDMS = this.decimalToDMS(latNum, true);
                 const lngDMS = this.decimalToDMS(lngNum, false);
+                const coords = {
+                    lat: latDMS,
+                    lng: lngDMS
+                };
+
+                const validation = this.validateCoordinates(coords);
+                if (!validation.valid) {
+                    return { success: false, error: validation.message };
+                }
+
                 return {
                     success: true,
                     detectedFormat: 'dd',
-                    data: {
-                        lat: latDMS,
-                        lng: lngDMS
-                    }
+                    data: coords
                 };
             } catch (error) {
                 return { success: false, error: 'Invalid DD format' };
